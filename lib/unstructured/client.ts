@@ -58,12 +58,45 @@ export async function partitionDocument(
     include_page_breaks: params.includePageBreaks ?? false,
   };
 
-  if (params.url) {
+  // Support downloaded binary PDFs converted to base64 (used by Supabase ingestion).
+  // Unstructured API requires multipart/form-data for file uploads.
+  const fileBase64 = (params as any).fileBase64 as string | undefined;
+  if (fileBase64) {
+    // Decode base64 to binary Buffer and create a Blob for multipart upload
+    // Unstructured API accepts key via `unstructured-api-key` header for multipart
+    const filename = (params as any).filename || "document.pdf";
+    const contentType = params.contentType || "application/pdf";
+    const buffer = Buffer.from(fileBase64, 'base64');
+    const blob = new Blob([buffer], { type: contentType });
+    const formData = new FormData();
+    formData.append("files", blob, filename);
+    formData.append("strategy", body.strategy as string);
+    formData.append("include_page_breaks", String(body.include_page_breaks));
+    if (params.maxCharacters) formData.append("max_characters", String(params.maxCharacters));
+    if (params.overlap) formData.append("overlap", String(params.overlap));
+
+    const res = await fetch(`${UNSTRUCTURED_BASE}`, {
+      method: "POST",
+      headers: {
+        "unstructured-api-key": apiKey,
+        Accept: "application/json",
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(
+        `Unstructured API error ${res.status}: ${errBody.slice(0, 200)}`
+      );
+    }
+
+    const data = await res.json();
+    return { elements: Array.isArray(data) ? data : [] };
+  } else if (params.url) {
     // Partition a file from a URL
     return partitionUrl(apiKey, params.url, body);
-  }
-
-  if (params.content) {
+  } else if (params.content) {
     body.text = params.content;
     if (params.contentType) {
       body.content_type = params.contentType;
@@ -85,7 +118,9 @@ export async function partitionDocument(
 
   if (!res.ok) {
     const errBody = await res.text();
-    throw new Error(`Unstructured API error ${res.status}: ${errBody.slice(0, 200)}`);
+    throw new Error(
+      `Unstructured API error ${res.status}: ${errBody.slice(0, 200)}`
+    );
   }
 
   const data = await res.json();

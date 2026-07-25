@@ -1,0 +1,6 @@
+- [ ] Add Supabase Storage PDF -> text extraction -> chunking -> Pinecone upsert pipeline
+- [ ] Add KB context fetcher (read PDFs from Supabase, optionally ingest to Pinecone, then query Pinecone for relevant chunks)
+- [ ] Modify app/api/chat/route.ts to: try vector/KB context first, then if “insufficient” do web-search fallback and answer again
+- [ ] Add optional admin endpoint app/api/kb/ingest to trigger ingestion
+- [ ] Add required env var documentation in README/notes (or comment in code)
+- [ ] Verify build passes (npm test/build) and lint/typecheck

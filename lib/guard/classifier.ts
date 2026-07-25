@@ -44,6 +44,63 @@ function getGeminiClient(): OpenAI | null {
 type ClassificationResult = "COMMERCE" | "UNRELATED";
 
 /**
+ * Pre-check for common greetings and casual phrases that should be treated as COMMERCE.
+ */
+function isGreetingOrCasual(query: string): boolean {
+  const lower = query.toLowerCase().trim();
+  const greetings = [
+    /^(hi|hello|hey|heyy|heyo|sup|yo|hii|hiiii)([.!?\s]*)$/i,
+    /^(good\s*(morning|afternoon|evening|day|night))(.*)$/i,
+    /^(what'?s\s*up|howdy|wassup|wassap)(.*)$/i,
+    /^(how\s+(are|r)\s+you|how('s|s)\s+(it\s+going|life|everything|things))(.*)$/i,
+    /^(nice\s+to\s+meet|pleased\s+to\s+meet)(.*)$/i,
+    /^(thanks|thank\s+you|ty|thx|thanx)([.!?\s]*)$/i,
+    /^(ok|okay|k|kk|alright|sure|fine)([.!?\s]*)$/i,
+    /^(bye|goodbye|cya|see\s+ya|later|gotta\s+go)(.*)$/i,
+  ];
+  return greetings.some((pattern) => pattern.test(lower));
+}
+
+/**
+ * Check if the query is asking about who created/made the AI.
+ */
+export function isCreatorQuery(query: string): boolean {
+  const lower = query.toLowerCase().trim();
+  const creatorPatterns = [
+    // Common variants
+    /who\s+(made|created|built|developed|programmed|coded|designed|invented)\s+(you|this|this\s+ai|this\s+bot|this\s+assistant)/i,
+    /who('s| is)\s+your\s+(creator|maker|developer|builder|programmer|owner|master|author)/i,
+    /what('s| is)\s+your\s+(creator'?s?|maker'?s?|developer'?s?)\s+name/i,
+
+    // Short/noisy variants
+    /who\s+made\s+you/i,
+    /who\s+created\s+you/i,
+    /who\s+built\s+you/i,
+    /who\s+developed\s+you/i,
+    /who\s+made\s+this\s+ai/i,
+    /who\s+created\s+this\s+ai/i,
+
+    // User wrote "who is pankaj" / "who is Pankaj" etc.
+    /who\s+is\s+the\s+creator/i,
+    /who\s+is\s+your\s+creator/i,
+
+    // Explicit Pankaj references
+    /who\s+is\s+pankaj\b/i,
+    /who\s+is\s+pankaj\s+chakraborty\b/i,
+    /pankaj\s+chakraborty\s+made\s+(you|this)/i,
+
+    // Setup/context variants
+    /tell\s+me\s+about\s+your\s+(creator|maker|developer)/i,
+    /who\s+do\s+i\s+thank\s+for\s+(making|creating|building)\s+you/i,
+    /who\s+developed\s+(you|this)/i,
+    /who\s+built\s+(you|this)/i,
+    /who\s+made\s+(you|this\s+app|this\s+website|this\s+project)/i,
+    /who\s+created\s+(you|this\s+app|this\s+website|this\s+project)/i,
+  ];
+  return creatorPatterns.some((pattern) => pattern.test(lower));
+}
+
+/**
  * Try classification with a specific provider.
  * Returns null if the provider fails; on permanent errors (402, 429),
  * degrades the provider so it's skipped in future calls.
@@ -78,12 +135,20 @@ async function tryClassifyWithProvider(
 }
 
 export async function classifyQuery(query: string): Promise<ClassificationResult> {
+  // Pre-check: greetings and casual phrases should always pass through
+  if (isGreetingOrCasual(query)) {
+    return "COMMERCE";
+  }
+
   const systemPrompt = `You are a domain classifier for a commerce education assistant. 
 Your task is to determine if a user's query is related to commerce, accounting, finance, 
 taxation, economics, business law, or business studies.
 
-Respond with exactly one word: "COMMERCE" if the query is related to these topics, 
-or "UNRELATED" if it is not. Do not include any other text.`;
+Greetings, casual conversation, and questions about the assistant itself (who made you, etc.) 
+should be classified as COMMERCE since they are part of normal interaction.
+
+Respond with exactly one word: "COMMERCE" if the query is related to these topics or is general interaction, 
+or "UNRELATED" if it is clearly not. Do not include any other text.`;
 
   // Try Groq first (fastest)
   const groqResult = await tryClassifyWithProvider(
