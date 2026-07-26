@@ -6,7 +6,16 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ["@pinecone-database/pinecone"],
+    serverComponentsExternalPackages: [
+      "@pinecone-database/pinecone",
+      "@ai-sdk/deepseek",
+      "@ai-sdk/groq",
+      "@ai-sdk/google",
+      "@ai-sdk/openai",
+      "ai",
+      "openai",
+      "pdfjs-dist",
+    ],
   },
 };
 
