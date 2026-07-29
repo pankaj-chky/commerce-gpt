@@ -15,6 +15,7 @@ import {
   CornerDownLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotebookSection } from "./NotebookSection";
 import type { ChatMessageData } from "@/app/page";
 
 interface ChatMessageProps {
@@ -29,7 +30,6 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
   const [feedback, setFeedback] = useState<"liked" | "disliked" | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
-  const [isHovered, setIsHovered] = useState(false);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
 
   const copyToClipboard = useCallback(async () => {
@@ -72,13 +72,8 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
   );
 
   const handleRetry = useCallback(() => {
-    if (onRetry) {
-      onRetry(message.id);
-    }
+    if (onRetry) onRetry(message.id);
   }, [message.id, onRetry]);
-
-  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
-  const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
   const renderContent = () => {
     if (isUser) {
@@ -94,26 +89,30 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
                 e.target.style.height = `${e.target.scrollHeight}px`;
               }}
               onKeyDown={handleEditKeyDown}
-              className="w-full min-w-[280px] bg-white/20 border-none outline-none resize-none text-sm leading-relaxed placeholder:text-white/40 text-white"
+              className="w-full min-w-[260px] bg-primary/10 border-none outline-none resize-none text-body leading-relaxed placeholder:text-white/40 text-white rounded-lg p-1"
               rows={1}
             />
             <div className="flex items-center gap-1 mt-2">
-              <span className="text-[10px] text-white/50">Esc to cancel &middot; Enter to save</span>
+              <span className="text-label text-white/50">
+                Esc to cancel · Enter to save
+              </span>
               <div className="flex-1" />
               <button
                 onClick={() => {
                   setIsEditing(false);
                   setEditValue(message.content);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] text-white/60 hover:text-white px-2 py-1 rounded-md hover:bg-white/10 transition-all"
+                className="inline-flex items-center gap-1 text-label text-white/60 hover:text-white px-2 py-1 rounded-md hover:bg-white/10 transition-all"
               >
                 <X className="w-3 h-3" />
                 Cancel
               </button>
               <button
                 onClick={handleEditSubmit}
-                disabled={!editValue.trim() || editValue.trim() === message.content}
-                className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 px-2 py-1 rounded-md hover:bg-white/10 transition-all disabled:opacity-30"
+                disabled={
+                  !editValue.trim() || editValue.trim() === message.content
+                }
+                className="inline-flex items-center gap-1 text-label text-[#39B6B0] hover:text-[#4CCCC6] px-2 py-1 rounded-md hover:bg-white/10 transition-all disabled:opacity-30"
               >
                 <CornerDownLeft className="w-3 h-3" />
                 Save
@@ -122,11 +121,26 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
           </div>
         );
       }
-      return <div className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</div>;
+      return (
+        <div className="whitespace-pre-wrap break-words leading-relaxed">
+          {message.content}
+        </div>
+      );
     }
 
-    const hasHighlights = /{{(important|mid|source|section):/.test(message.content);
-    
+    // Check for notebook blocks first
+    const hasNotebookBlocks = /\{\{notebook\}\}([\s\S]*?)\{\{\/notebook\}\}/g.test(
+      message.content
+    );
+
+    if (hasNotebookBlocks) {
+      return renderMixedContent(message.content);
+    }
+
+    const hasHighlights = /{{(important|mid|source|section):/.test(
+      message.content
+    );
+
     if (hasHighlights) {
       const parts = parseHighlights(message.content);
       return (
@@ -151,12 +165,6 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
                     {part.content}
                   </mark>
                 );
-              case "section":
-                return (
-                  <div key={idx} className="section-header">
-                    {part.content}
-                  </div>
-                );
               default:
                 return <span key={idx}>{part.content}</span>;
             }
@@ -165,87 +173,92 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
       );
     }
 
-    return <div className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</div>;
+    return (
+      <div className="whitespace-pre-wrap break-words leading-relaxed">
+        {message.content}
+      </div>
+    );
   };
 
   return (
     <div
       className={cn(
-        "flex gap-4 px-4 py-5 group message-appear",
+        "flex gap-3 px-4 py-3 message-appear",
         isUser ? "justify-end" : "justify-start"
       )}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       {/* Avatar */}
-      <div
-        className={cn(
-          "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300",
-          isUser
-            ? "bg-gradient-to-br from-emerald-700 to-emerald-600 text-white order-2 shadow-lg shadow-emerald-600/25"
-            : message.blocked
-              ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white order-1 shadow-lg shadow-amber-500/25"
-              : "bg-gradient-to-br from-emerald-600/15 via-emerald-600/10 to-amber-500/10 text-emerald-600 order-1 luxury-border shadow-sm"
-        )}
-      >
-        {isUser ? (
-          <User className="w-4 h-4" />
-        ) : message.blocked ? (
-          <Shield className="w-4 h-4" />
-        ) : (
-          <Bot className="w-4 h-4" />
-        )}
-      </div>
+      {isUser ? (
+        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center order-2 shadow-sm">
+          <User className="w-[15px] h-[15px]" />
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center order-1",
+            message.blocked
+              ? "bg-destructive/10 text-destructive"
+              : "bg-primary/10 text-primary"
+          )}
+        >
+          {message.blocked ? (
+            <Shield className="w-[15px] h-[15px]" />
+          ) : (
+            <Bot className="w-[15px] h-[15px]" />
+          )}
+        </div>
+      )}
 
       {/* Content */}
       <div
         className={cn(
-          "max-w-[80%] min-w-0",
+          "max-w-[85%] min-w-0",
           isUser ? "order-1" : "order-2"
         )}
       >
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-xs font-semibold text-muted-foreground/70 font-serif tracking-wide">
-            {isUser ? "You" : "Commerce GPT"}
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-label font-semibold text-foreground/60">
+            {isUser ? "You" : "Permiz"}
           </span>
-          {!isUser && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-600/70 dark:text-emerald-400/70 bg-emerald-600/5 px-1.5 py-0.5 rounded-full font-medium">
-              <span className="w-1 h-1 rounded-full bg-emerald-600/60 animate-pulse" />
+          {!isUser && !message.blocked && (
+            <span className="flex items-center gap-1 text-[11px] text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-full font-medium">
+              <span className="w-1 h-1 rounded-full bg-primary animate-pulse-soft" />
               AI
             </span>
           )}
           {message.blocked && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium">
-              <Shield className="w-2.5 h-2.5" />
+            <span className="flex items-center gap-1 text-[11px] text-destructive bg-destructive/5 px-1.5 py-0.5 rounded-full font-medium">
+              <Shield className="w-[11px] h-[11px]" />
               Blocked
             </span>
           )}
         </div>
+
         <div
           className={cn(
-            "rounded-2xl px-5 py-3.5 text-sm leading-relaxed transition-all duration-200",
+            "rounded-2xl px-4 py-3 text-body leading-relaxed",
             isUser
-              ? "bg-gradient-to-br from-emerald-700 to-emerald-600 text-white rounded-tr-md shadow-md shadow-emerald-600/15"
+              ? "bg-primary text-white rounded-tr-md"
               : message.blocked
-                ? "bg-gradient-to-br from-amber-500/8 to-amber-500/12 border border-amber-500/20 rounded-tl-md"
-                : "bg-card/80 border border-border/40 hover:border-border/70 rounded-tl-md shadow-sm hover:shadow-elegant"
+                ? "bg-destructive/5 border border-destructive/15 rounded-tl-md"
+                : "bg-surface border border-border rounded-tl-md shadow-card"
           )}
         >
           {renderContent()}
         </div>
 
-        {/* Action buttons for assistant messages */}
+        {/* Assistant actions */}
         {!isUser && message.content && message.content.length > 0 && (
-          <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             <button
               onClick={copyToClipboard}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/45 hover:text-muted-foreground px-2 py-1 rounded-md hover:bg-secondary/50 transition-all"
-              aria-label="Copy message"
+              className="inline-flex items-center gap-1 text-label text-muted-foreground/40 hover:text-foreground px-2 py-1 rounded-lg hover:bg-surface-hover transition-all"
+              aria-label="Copy"
             >
               {copied ? (
                 <>
-                  <Check className="w-3 h-3 text-emerald-600" />
-                  <span className="text-emerald-600">Copied</span>
+                  <Check className="w-3 h-3 text-primary" />
+                  <span className="text-primary">Copied</span>
                 </>
               ) : (
                 <>
@@ -256,20 +269,21 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
             </button>
             <button
               onClick={handleRetry}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/45 hover:text-amber-600 dark:hover:text-amber-400 px-2 py-1 rounded-md hover:bg-secondary/50 transition-all"
-              aria-label="Retry message"
-              title="Regenerate response"
+              className="inline-flex items-center gap-1 text-label text-muted-foreground/40 hover:text-accent px-2 py-1 rounded-lg hover:bg-surface-hover transition-all"
+              aria-label="Retry"
             >
               <RefreshCw className="w-3 h-3" />
               Retry
             </button>
             <button
-              onClick={() => setFeedback(feedback === "liked" ? null : "liked")}
+              onClick={() =>
+                setFeedback(feedback === "liked" ? null : "liked")
+              }
               className={cn(
-                "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md hover:bg-secondary/50 transition-all",
+                "inline-flex items-center gap-1 text-label px-2 py-1 rounded-lg hover:bg-surface-hover transition-all",
                 feedback === "liked"
-                  ? "text-emerald-600"
-                  : "text-muted-foreground/45 hover:text-muted-foreground"
+                  ? "text-primary"
+                  : "text-muted-foreground/40 hover:text-foreground"
               )}
               aria-label="Like"
             >
@@ -280,10 +294,10 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
                 setFeedback(feedback === "disliked" ? null : "disliked")
               }
               className={cn(
-                "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md hover:bg-secondary/50 transition-all",
+                "inline-flex items-center gap-1 text-label px-2 py-1 rounded-lg hover:bg-surface-hover transition-all",
                 feedback === "disliked"
-                  ? "text-red-500"
-                  : "text-muted-foreground/45 hover:text-muted-foreground"
+                  ? "text-destructive"
+                  : "text-muted-foreground/40 hover:text-foreground"
               )}
               aria-label="Dislike"
             >
@@ -292,16 +306,16 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
           </div>
         )}
 
-        {/* Action buttons for user messages */}
+        {/* User edit action */}
         {isUser && !isEditing && (
-          <div className="flex items-center gap-0.5 mt-1.5 justify-end opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="flex items-center gap-0.5 mt-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             <button
               onClick={() => {
                 setEditValue(message.content);
                 setIsEditing(true);
               }}
-              className="inline-flex items-center gap-1 text-[11px] text-white/50 hover:text-white px-2 py-1 rounded-md hover:bg-white/10 transition-all"
-              aria-label="Edit message"
+              className="inline-flex items-center gap-1 text-label text-white/50 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition-all"
+              aria-label="Edit"
             >
               <Pencil className="w-3 h-3" />
               Edit
@@ -314,14 +328,20 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
 }
 
 function parseHighlights(content: string) {
-  const parts: Array<{ type: "text" | "important" | "mid" | "source" | "section"; content: string }> = [];
+  const parts: Array<{
+    type: "text" | "important" | "mid" | "source" | "section";
+    content: string;
+  }> = [];
   const regex = /\{\{(important|mid|source|section):(.*?)\}\}/gs;
   let lastIndex = 0;
   let match;
 
   while ((match = regex.exec(content)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({ type: "text", content: content.slice(lastIndex, match.index) });
+      parts.push({
+        type: "text",
+        content: content.slice(lastIndex, match.index),
+      });
     }
     parts.push({ type: match[1] as any, content: match[2].trim() });
     lastIndex = match.index + match[0].length;
@@ -332,4 +352,100 @@ function parseHighlights(content: string) {
   }
 
   return parts;
+}
+
+/**
+ * Parse content that may contain {{notebook}}...{{/notebook}} blocks
+ * intermixed with regular text (which may also have highlight markers).
+ * Returns an array of segments: either text (string) or notebook blocks.
+ */
+type ContentSegment =
+  | { type: "text"; content: string }
+  | { type: "notebook"; content: string };
+
+function parseNotebookBlocks(raw: string): ContentSegment[] {
+  const segments: ContentSegment[] = [];
+  const regex = /\{\{notebook\}\}([\s\S]*?)\{\{\/notebook\}\}/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(raw)) !== null) {
+    // Text before this notebook block
+    if (match.index > lastIndex) {
+      segments.push({
+        type: "text",
+        content: raw.slice(lastIndex, match.index),
+      });
+    }
+    // The notebook content
+    segments.push({
+      type: "notebook",
+      content: match[1].trim(),
+    });
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining text after last notebook block
+  if (lastIndex < raw.length) {
+    segments.push({
+      type: "text",
+      content: raw.slice(lastIndex),
+    });
+  }
+
+  return segments;
+}
+
+function renderMixedContent(raw: string): React.ReactNode {
+  const segments = parseNotebookBlocks(raw);
+
+  return (
+    <div>
+      {segments.map((seg, idx) => {
+        if (seg.type === "notebook") {
+          return <NotebookSection key={idx} content={seg.content} />;
+        }
+        // Render text segment with possible highlight markers
+        const hasHighlights = /\{\{(important|mid|source|section):/.test(
+          seg.content
+        );
+        if (hasHighlights) {
+          const parts = parseHighlights(seg.content);
+          return (
+            <div key={idx} className="whitespace-pre-wrap break-words leading-relaxed">
+              {parts.map((part, partIdx) => {
+                switch (part.type) {
+                  case "important":
+                    return (
+                      <mark key={partIdx} className="highlight-important">
+                        {part.content}
+                      </mark>
+                    );
+                  case "mid":
+                    return (
+                      <mark key={partIdx} className="highlight-mid">
+                        {part.content}
+                      </mark>
+                    );
+                  case "source":
+                    return (
+                      <mark key={partIdx} className="highlight-source">
+                        {part.content}
+                      </mark>
+                    );
+                  default:
+                    return <span key={partIdx}>{part.content}</span>;
+                }
+              })}
+            </div>
+          );
+        }
+        return (
+          <div key={idx} className="whitespace-pre-wrap break-words leading-relaxed">
+            {seg.content}
+          </div>
+        );
+      })}
+    </div>
+  );
 }

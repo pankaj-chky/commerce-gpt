@@ -8,16 +8,20 @@ const THEME_KEY = "commerce-gpt:theme";
 
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const stored = localStorage.getItem(THEME_KEY) as Theme | null;
+    // Check system preference if no stored value
     if (stored === "dark" || stored === "light") {
       setThemeState(stored);
       document.documentElement.classList.toggle("dark", stored === "dark");
     } else {
-      // Default to dark mode
-      document.documentElement.classList.add("dark");
-      localStorage.setItem(THEME_KEY, "dark");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initial = prefersDark ? "dark" : "light";
+      setThemeState(initial);
+      document.documentElement.classList.toggle("dark", initial === "dark");
     }
   }, []);
 
@@ -31,5 +35,5 @@ export function useTheme() {
     setTheme(theme === "light" ? "dark" : "light");
   }, [theme, setTheme]);
 
-  return { theme, setTheme, toggleTheme };
+  return { theme, setTheme, toggleTheme, mounted };
 }

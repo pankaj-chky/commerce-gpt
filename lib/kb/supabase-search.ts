@@ -49,41 +49,126 @@ export async function storeChunks(chunks: ChunkInput[]): Promise<number> {
 }
 
 /**
- * Search document chunks using ILIKE (case-insensitive substring matching).
- * Each word in the query must appear somewhere in the content.
+ * Common English stop words + question words that shouldn't be used as search filters.
+ * These words appear in almost every sentence and would filter out all results.
+ */
+const STOP_WORDS = new Set([
+  "what", "how", "why", "when", "where", "who", "whom", "which",
+  "is", "are", "was", "were", "be", "been", "being",
+  "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+  "of", "with", "from", "by", "as", "into", "about", "like",
+  "do", "does", "did", "has", "have", "had", "can", "could",
+  "will", "would", "shall", "should", "may", "might", "must",
+  "it", "its", "they", "them", "their", "he", "she", "his", "her",
+  "this", "that", "these", "those", "i", "me", "my", "we", "our",
+  "so", "if", "than", "then", "also", "just", "only",
+  "explain", "define", "describe", "tell", "give", "show",
+  "please", "help", "need", "want", "say", "means", "meaning",
+  "difference", "between", "compare", "contrast",
+  "calculate", "find", "compute", "determine",
+]);
+
+/**
+ * Extract meaningful keywords from a query, filtering out stop words and short terms.
+ * Returns keywords sorted by length descending (longer words are more specific).
+ */
+function extractKeywords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/[\s,;.!?()]+/)
+    .map(w => w.trim())
+    .filter(w => w.length >= 2 && !STOP_WORDS.has(w))
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 8);
+}
+
+/**
+ * Score a chunk by how many keywords it matches (case-insensitive).
+ */
+function scoreChunk(content: string, keywords: string[]): number {
+  const lower = content.toLowerCase();
+  let score = 0;
+  for (const kw of keywords) {
+    if (lower.includes(kw)) {
+      score += kw.length; // longer keyword matches = higher score
+    }
+  }
+  return score;
+}
+
+/**
+ * Search document chunks using ILIKE and OR logic.
+ * First tries strict AND matching. If no results, falls back to OR
+ * with any meaningful keyword, then ranks by match count.
  */
 export async function searchChunks(
   query: string,
   limit: number = 5
 ): Promise<DocumentChunk[]> {
   const supabase = getSupabaseServerClient();
+  const keywords = extractKeywords(query);
 
-  const words = query
-    .split(/\s+/)
-    .filter((w) => w.length >= 2)
-    .slice(0, 5);
+  if (keywords.length === 0) return [];
 
-  if (words.length === 0) {
-    return [];
-  }
-
+  // Stage 1: Try AND query (all keywords must match)
   let dbQuery = supabase
     .from("document_chunks")
     .select("id, content, filename, bucket, chunk_index, created_at")
+    .limit(limit * 3); // fetch extra for dedup + ranking
+
+  for (const kw of keywords.slice(0, 4)) {
+    dbQuery = dbQuery.ilike("content", `%${kw}%`);
+  }
+
+  const { data: andResults, error: andError } = await dbQuery;
+
+  if (!andError && andResults && andResults.length > 0) {
+    return (andResults as DocumentChunk[]).slice(0, limit);
+  }
+
+  // Stage 2: Fallback to OR — search each keyword individually and merge
+  const seen = new Set<string>();
+  const allChunks: DocumentChunk[] = [];
+
+  for (const kw of keywords.slice(0, 4)) {
+    const { data, error } = await supabase
+      .from("document_chunks")
+      .select("id, content, filename, bucket, chunk_index, created_at")
+      .ilike("content", `%${kw}%`)
+      .limit(10);
+
+    if (!error && data) {
+      for (const chunk of data as DocumentChunk[]) {
+        if (!seen.has(chunk.id)) {
+          seen.add(chunk.id);
+          allChunks.push(chunk);
+        }
+      }
+    }
+  }
+
+  // Rank by keyword match count (how many keywords appear in the chunk)
+  allChunks.sort((a, b) => {
+    const aScore = scoreChunk(a.content, keywords);
+    const bScore = scoreChunk(b.content, keywords);
+    return bScore - aScore;
+  });
+
+  const topResults = allChunks.slice(0, limit);
+
+  if (topResults.length > 0) {
+    return topResults;
+  }
+
+  // Stage 3: Last resort — try the most specific keyword with a shorter prefix
+  const bestKw = keywords[0];
+  const { data: lastResort } = await supabase
+    .from("document_chunks")
+    .select("id, content, filename, bucket, chunk_index, created_at")
+    .ilike("content", `%${bestKw}%`)
     .limit(limit);
 
-  for (const word of words) {
-    dbQuery = dbQuery.ilike("content", `%${word}%`);
-  }
-
-  const { data, error } = await dbQuery;
-
-  if (error) {
-    console.error(`[Supabase Search] ILIKE error:`, error.message);
-    return [];
-  }
-
-  return (data as DocumentChunk[]) || [];
+  return (lastResort as DocumentChunk[]) || [];
 }
 
 /**

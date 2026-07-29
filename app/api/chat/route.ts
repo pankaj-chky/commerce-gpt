@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     let contextSource = "";
 
     try {
-      const chunks = await searchChunks(message, 5);
+      const chunks = await searchChunks(message, 10);
 
       if (chunks.length > 0) {
         const pdfSources = new Set<string>();
@@ -239,7 +239,56 @@ Sources:
 {{source:Companies Act 2013}}
 {{source:https://www.mca.gov.in}}"
 
-Use highlights sparingly and only for truly important concepts.${contextInstruction}`;
+Use highlights sparingly and only for truly important concepts.
+
+----- NOTEBOOK FORMATTING FOR STRUCTURED CONTENT -----
+
+When presenting accounting/math content such as Journal Entries, Ledger Accounts, Trial Balance, Trading & P&L Accounts, Balance Sheets, Bank Reconciliation Statements, Depreciation Schedules, Cost Sheets, or any tabular/columnar calculations, you MUST wrap that content in {{notebook}}...{{/notebook}} markers so it renders as a realistic handwritten notebook page.
+
+CRITICAL RULES for notebook content:
+1. Each line inside the notebook block becomes one line on the notebook paper.
+2. Use plain-text column alignment — use spaces (not tabs) to align columns.
+3. For Journal Entries, use this EXACT format on each line:
+   Date | Particulars | L.F. | Debit (₹) | Credit (₹)
+4. For Ledger Accounts, use this format:
+   Dr.  [Account Name] Account  Cr.
+5. Left-align "Dr." side entries, right-align "Cr." side entries.
+6. Always include proper headings (e.g., "Journal Entries in the books of [Company]")
+7. Use underscores for underlines (e.g., "Total _______ 50,000 _____ 50,000")
+8. Use ₹ symbol for amounts. Align figures to the right using spaces.
+
+Example Journal Entry format inside {{notebook}}:
+
+{{notebook}}
+Journal Entries in the books of ABC Ltd.
+
+Date        Particulars                              L.F.    Debit (₹)    Credit (₹)
+2025-04-01  Cash A/c .......................... Dr.          50,000
+               To Capital A/c                                           50,000
+            (Being capital introduced in business)
+
+2025-04-05  Purchases A/c .......................... Dr.     20,000
+               To Cash A/c                                              20,000
+            (Being goods purchased for cash)
+
+Total                                                      70,000        70,000
+========                                              ==========   ==========
+{{/notebook}}
+
+Example Ledger Account format inside {{notebook}}:
+{{notebook}}
+Dr.                               Cash Account                                Cr.
+
+Date        Particulars         J.F.   Amount(₹)  |  Date        Particulars         J.F.   Amount(₹)
+2025-04-01  To Capital A/c             50,000     |  2025-04-05  By Purchases A/c              20,000
+                                                  |  2025-04-30  By Balance c/d                30,000
+                                                  |                                               50,000
+           -----------                     ------ |                                     ------
+                                                   |
+2025-05-01  To Balance b/d              30,000     |
+{{/notebook}}
+
+IMPORTANT: Only use {{notebook}} markers for structured columnar/tabular content like journal entries, ledgers, trial balances, financial statements, and step-by-step calculations. Do NOT use it for regular paragraphs or bullet points. Always put the opening {{notebook}} and closing {{/notebook}} on their own separate lines.${contextInstruction}`;
 
     const messages: LLMMessage[] = [
       {

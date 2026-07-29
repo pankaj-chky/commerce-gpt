@@ -1,81 +1,135 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
   darkMode: "class",
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
+        background: "var(--color-bg)",
+        foreground: "var(--color-fg)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--color-primary)",
+          hover: "var(--color-primary-hover)",
+          muted: "var(--color-primary-muted)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--color-accent)",
+          hover: "var(--color-accent-hover)",
+          muted: "var(--color-accent-muted)",
         },
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          hover: "var(--color-surface-hover)",
+          elevated: "var(--color-surface-elevated)",
+        },
+        muted: {
+          DEFAULT: "var(--color-muted)",
+          foreground: "var(--color-muted-fg)",
+        },
+        border: {
+          DEFAULT: "var(--color-border)",
+          subtle: "var(--color-border-subtle)",
+        },
+        sidebar: "var(--color-sidebar)",
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#EF4444",
+          foreground: "#FAFAF8",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        rolex: {
-          green: "hsl(160 65% 22%)",
-          gold: "hsl(42 70% 48%)",
-          cream: "hsl(42 35% 95%)",
-          dark: "hsl(160 35% 6%)",
-          silver: "hsl(45 10% 88%)",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        serif: ["Playfair Display", "Cormorant Garamond", "Georgia", "serif"],
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: [
+          "Inter",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: [
+          "JetBrains Mono",
+          "Fira Code",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace",
+        ],
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
+      fontSize: {
+        "hero": ["56px", { lineHeight: "1.1", fontWeight: "600", letterSpacing: "-0.02em" }],
+        "heading": ["28px", { lineHeight: "1.3", fontWeight: "600", letterSpacing: "-0.01em" }],
+        "card-title": ["18px", { lineHeight: "1.4", fontWeight: "600" }],
+        "body": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+        "caption": ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+        "label": ["12px", { lineHeight: "1.4", fontWeight: "500", letterSpacing: "0.04em" }],
+      },
+      borderRadius: {
+        "xl": "12px",
+        "2xl": "16px",
+        "3xl": "20px",
+        "4xl": "24px",
+        "full": "9999px",
+      },
+      boxShadow: {
+        "card": "0 0 0 1px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)",
+        "card-hover": "0 0 0 1px rgba(44,142,140,0.15), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)",
+        "input": "0 0 0 1px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
+        "input-focus": "0 0 0 2px rgba(44,142,140,0.2), 0 2px 12px rgba(44,142,140,0.08)",
+        "button": "0 0 0 1px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.06)",
+        "button-hover": "0 0 0 1px rgba(44,142,140,0.2), 0 2px 8px rgba(44,142,140,0.12)",
+        "elevated": "0 0 0 1px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.03)",
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fadeIn 0.5s ease-out",
+        "fade-up": "fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        "fade-up-delayed": "fadeUp 0.6s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "slide-right": "slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        "scale-in": "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "stagger-1": "fadeUp 0.5s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "stagger-2": "fadeUp 0.5s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "stagger-3": "fadeUp 0.5s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "stagger-4": "fadeUp 0.5s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "stagger-5": "fadeUp 0.5s 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "stagger-6": "fadeUp 0.5s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "chart-scroll": "chartScroll 120s linear infinite",
+        "pulse-soft": "pulseSoft 2s ease-in-out infinite",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(24px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        slideRight: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        chartScroll: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        pulseSoft: {
+          "0%, 100%": { opacity: "0.5" },
+          "50%": { opacity: "0.15" },
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
+
 export default config;
