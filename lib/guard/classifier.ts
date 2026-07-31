@@ -67,40 +67,44 @@ function isGreetingOrCasual(query: string): boolean {
 export function isCreatorQuery(query: string): boolean {
   const lower = query.toLowerCase().trim();
   const creatorPatterns = [
-    // Common variants
-    /who\s+(made|created|built|developed|programmed|coded|designed|invented)\s+(you|this|this\s+ai|this\s+bot|this\s+assistant)/i,
-    /who('s| is)\s+your\s+(creator|maker|developer|builder|programmer|owner|master|author)/i,
-    /what('s| is)\s+your\s+(creator'?s?|maker'?s?|developer'?s?)\s+name/i,
+    // Common variants (including shorthand: u=you, ur=your, whos=who's)
+    /who\s+(made|created|built|developed|programmed|coded|designed|invented)\s+(you|u|this|this\s+ai|this\s+bot|this\s+assistant)/i,
+    /who('s| is|s)\s+(your|ur)\s+(creator|maker|developer|builder|programmer|owner|master|author)/i,
+    /what('s| is|s)\s+(your|ur)\s+(creator'?s?|maker'?s?|developer'?s?)\s+name/i,
 
-    // Short/noisy variants
-    /who\s+made\s+you/i,
-    /who\s+created\s+you/i,
-    /who\s+built\s+you/i,
-    /who\s+developed\s+you/i,
+    // Short/noisy variants (with u/you support)
+    /who\s+made\s+(you|u)/i,
+    /who\s+created\s+(you|u)/i,
+    /who\s+built\s+(you|u)/i,
+    /who\s+developed\s+(you|u)/i,
     /who\s+made\s+this\s+ai/i,
     /who\s+created\s+this\s+ai/i,
 
     // User wrote "who is pankaj" / "who is Pankaj" etc.
     /who\s+is\s+the\s+creator/i,
-    /who\s+is\s+your\s+creator/i,
+    /who('s| is|s)\s+(your|ur)\s+creator/i,
+    /who\s+is\s+(your|ur)\s+(owner|master)/i,
 
     // Explicit Pankaj references
     /who\s+is\s+pankaj\b/i,
     /who\s+is\s+pankaj\s+chakraborty\b/i,
-    /pankaj\s+chakraborty\s+made\s+(you|this)/i,
+    /pankaj\s+chakraborty\s+made\s+(you|u|this)/i,
     /tell\s+me\s+about\s+pankaj\b/i,
-    /tell\s+me\s+about\s+pankaj\s+chakraborty\b/i,
-    /what\s+(do\s+you\s+know\s+about|about)\s+pankaj\b/i,
-    /what\s+(do\s+you\s+know\s+about|about)\s+pankaj\s+chakraborty\b/i,
+    /tell\s+(me|us)\s+about\s+pankaj\s+chakraborty\b/i,
+    /what\s+(do\s+(you|u)\s+know\s+about|about)\s+pankaj\b/i,
+    /what\s+(do\s+(you|u)\s+know\s+about|about)\s+pankaj\s+chakraborty\b/i,
     /pankaj\s+chakraborty/i,
 
     // Setup/context variants
-    /tell\s+me\s+about\s+your\s+(creator|maker|developer)/i,
-    /who\s+do\s+i\s+thank\s+for\s+(making|creating|building)\s+you/i,
-    /who\s+developed\s+(you|this)/i,
-    /who\s+built\s+(you|this)/i,
-    /who\s+made\s+(you|this\s+app|this\s+website|this\s+project)/i,
-    /who\s+created\s+(you|this\s+app|this\s+website|this\s+project)/i,
+    /tell\s+me\s+about\s+(your|ur)\s+(creator|maker|developer)/i,
+    /who\s+do\s+i\s+thank\s+for\s+(making|creating|building)\s+(you|u)/i,
+    /who\s+developed\s+(you|u|this)/i,
+    /who\s+built\s+(you|u|this)/i,
+    /who\s+made\s+(you|u|this\s+app|this\s+website|this\s+project)/i,
+    /who\s+created\s+(you|u|this\s+app|this\s+website|this\s+project)/i,
+    /who\s+owns\s+(you|u)/i,
+    /who('s| is|s)\s+(your|ur)\s+owner/i,
+    /who\s+is\s+the\s+man\s+behind\s+(you|u|this)/i,
   ];
   return creatorPatterns.some((pattern) => pattern.test(lower));
 }
