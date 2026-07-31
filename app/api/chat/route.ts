@@ -164,6 +164,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ---- History-based Follow-up Check ----
+    // If the last assistant response was about Pankaj Chakraborty, intercept follow-up
+    // questions that refer to "him", "he", "his", or ask for more info about the creator.
+    // This prevents users from tricking the AI by asking follow-ups that reference Pankaj.
+    const lastAssistantMsg = [...history].reverse().find((m: any) => m.role === "assistant");
+    if (lastAssistantMsg && lastAssistantMsg.content.includes("Pankaj Chakraborty, a student of Class 12.")) {
+      const lower = message.toLowerCase().trim();
+      const followUpRefs = [
+        /\bhim\b/i,
+        /\bhe\b/i,
+        /\bhis\b/i,
+        /more\s+(about|info|information)/i,
+        /tell\s+(me|us)\s+more/i,
+        /what\s+(else|about|more)/i,
+        /anything\s+else/i,
+        /can\s+you\s+(tell|give|provide)/i,
+        /do\s+(you|u)\s+(have|know)\s+(more|any)/i,
+        /explain\s+(about\s+)?(him|it)/i,
+        /give\s+more/i,
+        /i\s+(want|need)\s+(to\s+)?know/i,
+      ];
+      const isFollowUp = followUpRefs.some((p) => p.test(lower));
+      if (isFollowUp) {
+        return NextResponse.json({
+          response:
+            "Pankaj Chakraborty, a student of Class 12.",
+        });
+      }
+    }
+
     // Domain Guard Check
     const classification = await classifyQuery(message);
 

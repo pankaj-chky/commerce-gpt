@@ -105,6 +105,21 @@ export function isCreatorQuery(query: string): boolean {
     /who\s+owns\s+(you|u)/i,
     /who('s| is|s)\s+(your|ur)\s+owner/i,
     /who\s+is\s+the\s+man\s+behind\s+(you|u|this)/i,
+
+    // Follow-up questions about the creator (after initial answer)
+    /more\s+(about|info\s+about|information\s+(about|on))\s+(him|the\s+creator|the\s+developer|the\s+owner|your\s+creator|your\s+developer|your\s+owner|pankaj)/i,
+    /tell\s+(me|us)\s+more\s+about\s+(him|the\s+creator|the\s+developer|the\s+owner|your\s+creator|your\s+developer|your\s+owner|pankaj)/i,
+    /what\s+(else\s+)?(do\s+(you|u)\s+know|about)\s+(him|the\s+creator|the\s+developer|the\s+owner|pankaj)/i,
+    /can\s+(you|u)\s+(tell\s+(me|us)|give|provide)\s+more\s+(info|information|details)\s+(about|on)\s+(him|the\s+creator|the\s+developer|the\s+owner|pankaj)/i,
+    /anything\s+(else\s+)?(about|on)\s+(him|the\s+creator|the\s+developer|the\s+owner|pankaj)/i,
+    /do\s+(you|u)\s+(have|know)\s+(more|any|anything)\s+(info\s+|information\s+)?(about|on)\s+(him|the\s+creator|the\s+developer|the\s+owner|pankaj)/i,
+    /who\s+is\s+he/i,
+    /what\s+about\s+him/i,
+    /tell\s+(me|us)\s+about\s+him/i,
+    /explain\s+(about\s+)?him/i,
+    /give\s+more\s+(info|information|details)\s+about\s+him/i,
+    /i\s+want\s+to\s+know\s+more\s+about\s+him/i,
+    /i\s+need\s+more\s+(info|information)\s+about\s+him/i,
   ];
   return creatorPatterns.some((pattern) => pattern.test(lower));
 }
