@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { classifyQuery } from "@/lib/guard/classifier";
+import { classifyQuery, isCreatorQuery, isPankajWithContext } from "@/lib/guard/classifier";
 import { searchChunks, getChunkCount, getChunkSources } from "@/lib/kb/supabase-search";
 import { searchWebAsContext, isWebSearchAvailable } from "@/lib/search/web-search";
 import { routeToLLM, LLMMessage } from "@/lib/ai/router";
@@ -148,6 +148,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ response: diag });
     }
 
+    // ---- Creator / Pankaj Query Check ----
+    // If the query is about who made the AI or who Pankaj Chakraborty is,
+    // return the custom response immediately without searching the internet.
+    // But if the query has additional context (e.g., "who is Pankaj Chakraborty, scientist?"),
+    // let the normal classification flow handle it.
+    if (isCreatorQuery(message)) {
+      // For Pankaj queries with extra context (e.g., "who is Pankaj Chakraborty, commerce professor?"),
+      // let the classifier decide if it's commerce-related so it can search the internet.
+      if (!isPankajWithContext(message)) {
+        return NextResponse.json({
+          response:
+            "Pankaj Chakraborty, a student of Class 12.",
+        });
+      }
+    }
+
     // Domain Guard Check
     const classification = await classifyQuery(message);
 
@@ -222,14 +238,13 @@ You help with accounting, finance, economics, taxation, business law, and auditi
 ${isGreeting ? 'The user is greeting you. Respond warmly and briefly in 1-2 sentences, then invite them to ask about commerce topics.' : ''}
 
 For theoretical/commerce questions, structure your answer as follows:
-
 1. Start with "As per Section X of [Book Name / Law Name]," when referencing specific sections or provisions.
 2. Explain the concept clearly in body paragraphs.
 3. At the end, list Sources with book names and websites used.
 
 To highlight important text, use these markers:
 - {{important:text}} for the MOST important points (pink highlight)
-- {{mid:text}} for moderately important points (lime green highlight)  
+- {{mid:text}} for moderately important points (lime green highlight)
 - {{source:text}} for source citations (yellow highlight)
 
 Example format:
@@ -241,54 +256,79 @@ Sources:
 
 Use highlights sparingly and only for truly important concepts.
 
------ NOTEBOOK FORMATTING FOR STRUCTURED CONTENT -----
+----- NOTEBOOK FORMATTING FOR CALCULATIONS AND STRUCTURED CONTENT -----
 
-When presenting accounting/math content such as Journal Entries, Ledger Accounts, Trial Balance, Trading & P&L Accounts, Balance Sheets, Bank Reconciliation Statements, Depreciation Schedules, Cost Sheets, or any tabular/columnar calculations, you MUST wrap that content in {{notebook}}...{{/notebook}} markers so it renders as a realistic handwritten notebook page.
+Use {{notebook}}...{{/notebook}} markers ONLY when your answer contains:
+- Journal entries, ledger accounts, trial balance, balance sheet
+- Cash book, trading account, profit and loss account
+- ANY mathematical calculation (even simple like 1+1=2)
+- Step-by-step numerical solutions
+- Depreciation schedules, cost sheets
+- Any tabular/columnar financial data
+- Ratio analysis with numbers
+- Working notes with calculations
 
-CRITICAL RULES for notebook content:
-1. Each line inside the notebook block becomes one line on the notebook paper.
-2. Use plain-text column alignment — use spaces (not tabs) to align columns.
-3. For Journal Entries, use this EXACT format on each line:
-   Date | Particulars | L.F. | Debit (₹) | Credit (₹)
-4. For Ledger Accounts, use this format:
-   Dr.  [Account Name] Account  Cr.
-5. Left-align "Dr." side entries, right-align "Cr." side entries.
-6. Always include proper headings (e.g., "Journal Entries in the books of [Company]")
-7. Use underscores for underlines (e.g., "Total _______ 50,000 _____ 50,000")
-8. Use ₹ symbol for amounts. Align figures to the right using spaces.
+Do NOT use {{notebook}} for:
+- Plain text explanations and definitions
+- Theoretical answers and concepts
+- Greetings or simple text responses
+- Bullet points without calculations
 
-Example Journal Entry format inside {{notebook}}:
+When you DO use notebook format, follow these rules:
+1. Put {{notebook}} on its own line at the start of the calculation section
+2. Put {{/notebook}} on its own line at the end
+3. Each line becomes one line on the notebook paper
+4. Use spaces to align columns properly
+5. Show step-by-step working for all calculations
+6. Use proper headings like "Journal Entry", "Calculation", "Working Note"
+7. Use the rupee symbol for amounts, align figures to the right
 
+Example calculation in notebook:
+{{notebook}}
+Calculation of Compound Interest
+
+Principal (P) = Rs.50,000
+Rate (r) = 8% = 0.08
+Time (n) = 3 years
+
+Amount = P x (1 + r)^n
+       = 50,000 x (1 + 0.08)^3
+       = 50,000 x 1.2597
+       = Rs.62,985.60
+
+Compound Interest = Amount - Principal
+                  = 62,985.60 - 50,000
+                  = Rs.12,985.60
+{{/notebook}}
+
+Example journal entry in notebook:
 {{notebook}}
 Journal Entries in the books of ABC Ltd.
 
-Date        Particulars                              L.F.    Debit (₹)    Credit (₹)
-2025-04-01  Cash A/c .......................... Dr.          50,000
-               To Capital A/c                                           50,000
-            (Being capital introduced in business)
+Date        Particulars                          L.F.    Debit(Rs)   Credit(Rs)
+2025-04-01  Cash A/c .................. Dr.        50,000
+               To Capital A/c                                  50,000
+            (Being capital introduced)
 
-2025-04-05  Purchases A/c .......................... Dr.     20,000
-               To Cash A/c                                              20,000
+2025-04-05  Purchases A/c .............. Dr.       20,000
+               To Cash A/c                                     20,000
             (Being goods purchased for cash)
 
-Total                                                      70,000        70,000
-========                                              ==========   ==========
+Total                                           70,000      70,000
 {{/notebook}}
 
-Example Ledger Account format inside {{notebook}}:
+Example ledger account in notebook:
 {{notebook}}
-Dr.                               Cash Account                                Cr.
+Dr.                    Cash Account                     Cr.
 
-Date        Particulars         J.F.   Amount(₹)  |  Date        Particulars         J.F.   Amount(₹)
-2025-04-01  To Capital A/c             50,000     |  2025-04-05  By Purchases A/c              20,000
-                                                  |  2025-04-30  By Balance c/d                30,000
-                                                  |                                               50,000
-           -----------                     ------ |                                     ------
-                                                   |
-2025-05-01  To Balance b/d              30,000     |
+Date        Particulars         J.F.   Amount    Date        Particulars        J.F.   Amount
+2025-04-01  To Capital A/c             50,000   2025-04-05  By Purchases A/c           20,000
+                                                2025-04-30  By Balance c/d             30,000
+                                                                       Total              50,000
+2025-05-01  To Balance b/d             30,000
 {{/notebook}}
 
-IMPORTANT: Only use {{notebook}} markers for structured columnar/tabular content like journal entries, ledgers, trial balances, financial statements, and step-by-step calculations. Do NOT use it for regular paragraphs or bullet points. Always put the opening {{notebook}} and closing {{/notebook}} on their own separate lines.${contextInstruction}`;
+IMPORTANT: You can mix regular text with notebook blocks. Explain concepts in normal text, then show calculations in {{notebook}} blocks. Always put the opening {{notebook}} and closing {{/notebook}} on their own separate lines.${contextInstruction}`;
 
     const messages: LLMMessage[] = [
       {

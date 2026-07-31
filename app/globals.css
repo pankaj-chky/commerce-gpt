@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;500;600;700&family=Patrick+Hand&family=Gloria+Hallelujah&family=Dancing+Script:wght@400;500;600;700&display=swap');
 
 @layer base {
   /* --- Light Mode (Permiz Brand) --- */
@@ -103,39 +103,90 @@
     background: rgba(255, 255, 255, 0.14);
   }
 
-  /* --- Typing dots --- */
+  /* --- Typing dots (premium breathing pulse) --- */
   .typing-dot {
     @apply w-1.5 h-1.5 rounded-full;
     background: var(--color-primary);
-    animation: typingBounce 1.4s ease-in-out infinite;
+    animation: typingBounce 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
-  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  .typing-dot:nth-child(2) { animation-delay: 0.18s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.36s; }
 
   @keyframes typingBounce {
     0%, 60%, 100% { 
-      transform: translateY(0) scale(1); 
-      opacity: 0.3; 
+      transform: translateY(0) scale(0.85); 
+      opacity: 0.25; 
     }
     30% { 
-      transform: translateY(-6px) scale(1.1); 
+      transform: translateY(-7px) scale(1.15); 
       opacity: 1; 
     }
   }
 
-  /* --- Message entry animation --- */
+  /* --- Message entry animation (premium slide + fade) --- */
   .message-appear {
-    animation: messageSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: messageSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes messageSlideIn {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(16px) scale(0.98);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
+  }
+
+  /* --- Premium button press feedback --- */
+  .btn-press {
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.2s ease,
+                color 0.2s ease;
+  }
+  .btn-press:active {
+    transform: scale(0.96);
+  }
+
+  /* --- Premium hover lift --- */
+  .hover-lift {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* --- Ink fade-in for handwriting text --- */
+  .ink-appear {
+    animation: inkFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes inkFadeIn {
+    from {
+      opacity: 0;
+      filter: blur(2px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  /* --- Shimmer effect for loading states --- */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }
 
@@ -182,11 +233,17 @@
               opacity 0.25s ease;
 }
 
-/* ========== NOTEBOOK STYLES ========== */
+/* ========== ENHANCED NOTEBOOK STYLES ========== */
 
+.notebook-section {
+  position: relative;
+}
+
+/* Notebook page wrapper */
 .notebook-page-wrapper {
   position: relative;
   margin-left: 28px; /* space for ring holes */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Ring binder holes */
@@ -212,6 +269,7 @@
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.1),
               0 0 0 3px var(--color-bg);
   flex-shrink: 0;
+  transition: all 0.2s ease;
 }
 
 .dark .notebook-hole {
@@ -243,6 +301,8 @@
   padding-top: 12px;
   padding-bottom: 12px;
   overflow-x: auto;
+  border-radius: 0 8px 8px 0;
+  transition: all 0.3s ease;
 }
 
 .dark .notebook-paper {
@@ -306,7 +366,8 @@
   font-weight: 500;
   color: #1a1a2e;
   letter-spacing: 0.02em;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -329,4 +390,192 @@
   pointer-events: none;
   z-index: 0;
   border-radius: inherit;
+}
+
+/* Notebook slide-in animation (premium with depth) */
+@keyframes notebookSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.notebook-appear {
+  animation: notebookSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Journal Entry Styles */
+.journal-entry-wrapper {
+  position: relative;
+}
+
+.journal-table {
+  font-size: 12px;
+}
+
+.journal-table-header {
+  font-size: 11px;
+}
+
+/* T-Account Styles */
+.t-account {
+  font-size: 12px;
+}
+
+/* Balance Sheet Styles */
+.balance-sheet-wrapper {
+  position: relative;
+}
+
+/* Trial Balance Styles */
+.trial-balance-wrapper {
+  position: relative;
+}
+
+/* Sticky Note Styles */
+.sticky-note {
+  transform: rotate(-0.5deg);
+  transition: transform 0.2s ease;
+}
+
+.sticky-note:hover {
+  transform: rotate(0deg);
+}
+
+/* Teacher Comment Styles */
+.teacher-comment {
+  position: relative;
+}
+
+/* Page Turn Animation */
+@keyframes pageTurn {
+  from {
+    transform: perspective(1200px) rotateY(0deg);
+    transform-origin: left center;
+  }
+  to {
+    transform: perspective(1200px) rotateY(-180deg);
+    transform-origin: left center;
+  }
+}
+
+.page-turn {
+  animation: pageTurn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Pen Writing Animation */
+@keyframes penWrite {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.pen-writing {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: penWrite 2s steps(40, end);
+}
+
+/* Print Styles */
+@media print {
+  .notebook-toolbar,
+  .notebook-holes,
+  .sidebar-slide,
+  header,
+  .chat-input-area {
+    display: none !important;
+  }
+
+  .notebook-page-wrapper {
+    margin-left: 0;
+    max-width: 100% !important;
+  }
+
+  .notebook-paper {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    border-radius: 0;
+  }
+
+  body {
+    background: white;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .notebook-page-wrapper {
+    margin-left: 0;
+    max-width: 100% !important;
+  }
+
+  .notebook-holes {
+    display: none;
+  }
+
+  .notebook-paper {
+    padding-left: 36px;
+    padding-right: 8px;
+    border-radius: 8px;
+  }
+
+  .notebook-margin {
+    left: 28px;
+  }
+}
+
+/* Fullscreen Mode */
+.notebook-section:fullscreen {
+  padding: 20px;
+  background: var(--color-bg);
+}
+
+.notebook-section:fullscreen .notebook-page-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Dark mode adjustments for notebook elements */
+.dark .journal-table-header {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .journal-table .bg-white {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dark .journal-table .bg-gray-50 {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark .t-account .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .balance-sheet-wrapper .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .balance-sheet-wrapper .bg-gray-50 {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark .trial-balance-wrapper .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .trial-balance-wrapper .bg-gray-50 {
+  background: rgba(255, 255, 255, 0.03);
 }

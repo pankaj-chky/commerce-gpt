@@ -15,7 +15,7 @@ import {
   CornerDownLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NotebookSection } from "./NotebookSection";
+import { NotebookSection } from "@/components/notebook/NotebookSection";
 import type { ChatMessageData } from "@/app/page";
 
 interface ChatMessageProps {
@@ -128,7 +128,7 @@ export function ChatMessage({ message, onRetry, onEdit }: ChatMessageProps) {
       );
     }
 
-    // Check for notebook blocks first
+    // For assistant messages, only use notebook for explicit notebook blocks
     const hasNotebookBlocks = /\{\{notebook\}\}([\s\S]*?)\{\{\/notebook\}\}/g.test(
       message.content
     );
@@ -398,6 +398,13 @@ function parseNotebookBlocks(raw: string): ContentSegment[] {
 
 function renderMixedContent(raw: string): React.ReactNode {
   const segments = parseNotebookBlocks(raw);
+  // If there are multiple segments, we still want the text parts in notebook format too
+  // Wrap everything in notebook appearance
+  const hasOnlyNotebook = segments.length === 1 && segments[0].type === "notebook";
+
+  if (hasOnlyNotebook) {
+    return <NotebookSection content={segments[0].content} />;
+  }
 
   return (
     <div>
@@ -405,7 +412,13 @@ function renderMixedContent(raw: string): React.ReactNode {
         if (seg.type === "notebook") {
           return <NotebookSection key={idx} content={seg.content} />;
         }
-        // Render text segment with possible highlight markers
+        // Text segments also render in notebook when they contain commerce content
+        const isCommerceContent = /(account|journal|ledger|balance|entry|debit|credit|calculate|total|sum|profit|loss|asset|liability|trial|book|entry|₹|Rs\.)/i.test(seg.content);
+        
+        if (isCommerceContent && seg.content.length > 20) {
+          return <NotebookSection key={idx} content={seg.content} />;
+        }
+        
         const hasHighlights = /\{\{(important|mid|source|section):/.test(
           seg.content
         );

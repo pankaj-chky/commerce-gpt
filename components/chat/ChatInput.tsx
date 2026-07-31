@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Mic, Paperclip, CornerDownLeft } from "lucide-react";
+import { haptics } from "@/lib/haptics";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -29,6 +30,7 @@ export function ChatInput({ onSend, disabled, onStop }: ChatInputProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || disabled) return;
+    haptics.heavy();
     onSend(message.trim());
     setMessage("");
   };

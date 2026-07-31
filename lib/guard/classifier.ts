@@ -88,6 +88,11 @@ export function isCreatorQuery(query: string): boolean {
     /who\s+is\s+pankaj\b/i,
     /who\s+is\s+pankaj\s+chakraborty\b/i,
     /pankaj\s+chakraborty\s+made\s+(you|this)/i,
+    /tell\s+me\s+about\s+pankaj\b/i,
+    /tell\s+me\s+about\s+pankaj\s+chakraborty\b/i,
+    /what\s+(do\s+you\s+know\s+about|about)\s+pankaj\b/i,
+    /what\s+(do\s+you\s+know\s+about|about)\s+pankaj\s+chakraborty\b/i,
+    /pankaj\s+chakraborty/i,
 
     // Setup/context variants
     /tell\s+me\s+about\s+your\s+(creator|maker|developer)/i,
@@ -98,6 +103,27 @@ export function isCreatorQuery(query: string): boolean {
     /who\s+created\s+(you|this\s+app|this\s+website|this\s+project)/i,
   ];
   return creatorPatterns.some((pattern) => pattern.test(lower));
+}
+
+/**
+ * Check if the query is about Pankaj Chakraborty but with additional context
+ * (e.g., "who is Pankaj Chakraborty, scientist?" or "who is Pankaj Chakraborty, doctor?").
+ * Returns true if there's extra context beyond just asking about who Pankaj is.
+ * This allows the classifier to decide whether the query is commerce-related
+ * (e.g., "who is Pankaj Chakraborty, commerce professor?") or unrelated.
+ */
+export function isPankajWithContext(query: string): boolean {
+  const lower = query.toLowerCase().trim();
+  // Check if the query includes "who is pankaj [something]" or "who is pankaj chakraborty [something]"
+  // where [something] is additional context beyond the name
+  const pankajWithExtra = /who\s+is\s+pankaj(\s+chakraborty)?\s+\w/i.test(lower);
+  // Also check for "tell me about pankaj [something]" or "what do you know about pankaj [something]"
+  const tellWithExtra = /tell\s+me\s+about\s+pankaj(\s+chakraborty)?\s+\w/i.test(lower);
+  const knowWithExtra = /what\s+(do\s+you\s+know\s+about|about)\s+pankaj(\s+chakraborty)?\s+\w/i.test(lower);
+  // Check for "pankaj chakraborty [profession/role]" with a word after the name
+  const pankajRole = /pankaj\s+chakraborty\s+\w/i.test(lower) && !/pankaj\s+chakraborty\s+(made|created|built|developed|programmed|coded|designed|invented)\s/i.test(lower);
+  
+  return pankajWithExtra || tellWithExtra || knowWithExtra || pankajRole;
 }
 
 /**
